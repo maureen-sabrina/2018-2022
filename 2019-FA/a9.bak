@@ -1,0 +1,368 @@
+;; The first three lines of this file were inserted by DrRacket. They record metadata
+;; about the language level of this file in a form that our tools can easily process.
+#reader(lib "htdp-intermediate-lambda-reader.ss" "lang")((modname a9) (read-case-sensitive #t) (teachpacks ()) (htdp-settings #(#t constructor repeating-decimal #f #t none #f () #f)))
+;;;; ASSIGNMENT 9
+(require 2htdp/image)
+(require 2htdp/universe)
+
+;;;;;;;;;;;;;;; SECTION 1: WARM-UP
+
+;;;; Exercise 1
+
+; Design a function celsius->fahrenheit
+
+; celsius->farenheit: Num -> Num
+; Takes a temperature in Celsius and returns the corresponding temperature in
+; Farenheit.
+; (define (celcius->farenheit t) ...)
+(check-expect (celsius->farenheit 0) 32)
+
+(define (process-celsius->farenheit t)
+  (... t ...))
+
+(define (celsius->farenheit t)
+  (celsius->fahrenheit.convert t))
+;;;;  (convert-temp 32 1 * t 9/5))
+;;;  (+ 32 (* 1 (* c 9/5))))
+
+
+; Design a function fahrenheit->celsius
+
+; fahrenheit->celsius: Num -> Num
+; Takes a temperature in Fahrenheit and returns the corresponding temperature in
+; Celsius.
+; (define (fahrenheit->celsius t) ...)
+(check-expect (fahrenheit->celsius 32) 0)
+
+(define (process-fahrenheit->celsius t)
+  (... t ...))
+
+(define (fahrenheit->celsius t)
+  (fahrenheit->celsius.convert t))
+;;;;  (convert-temp 0 9/5 - t 32))
+;;;  (+ 0 (* 9/5 (- f 32))))
+
+
+; Design a function fahrenheit->kelvin
+
+; fahrenheit->kelvin: Num -> Num
+; Takes a temperature in Farenheit and returns the corresponding temperature in
+; Kelvin.
+; (define (fahrenheit->kelvin t) ...)
+(check-expect (fahrenheit->kelvin 32) 273.15)
+
+(define (process-fahrenheit->kelvin t)
+  (... t ...))
+
+(define (fahrenheit->kelvin t)
+  (fahrenheit->kelvin.convert t))
+;;;;  (convert-temp 0 5/9 + t 459.67))
+;;;  (+ 0 (* 5/9 (+ t 459.67))))
+
+
+; Abstract over celsius->fahrenheit, fahrenheit->celsius and fahrenheit->kelvin
+
+; 1. Similar functions
+; (see above exercises)
+
+; 2. Inessential Differences
+; - The variable used for the argument
+; - Moveable operations
+
+; 3. Essential Differences
+; - While the same operations, + and *, are used in each function, they are not
+;   in the same order
+; - The Numbers used vary from function to function
+
+; 4. Abstraction
+; convert-temp: Num Num Num [Num Num -> Num] Num -> Num
+; Takes a starting Temperature, an outside number for addition, an outside number for
+; multiplication, an operation, and an inside number.
+; (define (convert-temp t n1 n2 op n3) ...)
+
+(define (convert-temp n1 n2 op t n3)
+  (+ n1 (* n2 (op t n3))))
+
+
+;;;; Exercise 2
+
+; convert : Number Number Number Number Number -> Number
+; return what a should become according to linear interpolation
+; if a1 becomes b1 and a2 becomes b2
+; *Assumption*: a1 and a2 are different
+(check-expect (convert 0 32 100 212   0)  32)
+(check-expect (convert 0 32 100 212 100) 212)
+(check-expect (convert 0 32 100 212  50) 122)
+(define (convert a1 b1 a2 b2 a)
+  (/ (+ (* b1 (- a2 a)) (* b2 (- a a1))) (- a2 a1)))
+
+(define (celsius->fahrenheit.convert c)
+  (convert 0 32 100 212 c))
+(define (fahrenheit->celsius.convert f)
+  (convert 32 0 33 9/5 f))
+(define (fahrenheit->kelvin.convert f)
+  (convert -459.67 0 -458.67 5/9 f))
+
+
+;;;;;;;;;;;;;;; SECTION 2: GRAPH PLOTTING
+
+; A World is (make-world Number Number Number Number)
+; *Interpretation*:
+;   xmin is the Cartesian x coordinate of the left edge of the view
+;   xmax is the Cartesian x coordinate of the right edge of the view
+;   ymin is the Cartesian y coordinate of the BOTTOM edge of the view
+;   ymax is the Cartesian y coordinate of the TOP edge of the view
+(define-struct world [xmin xmax ymin ymax])
+
+;;;; Exercise 3
+
+; Define constants width and height
+(define width 500)
+(define height 300)
+(define my-dot (circle 3 "solid" "blue"))
+
+; Define my-points
+(define my-points (build-list 500 (lambda (x) (make-posn x (* 300 (sin x))))))
+
+;;;; Exercise 4
+
+; Design a function draw-lop
+; draw-lop: [ListOf Posns] -> Image
+; Takes a list of Posns and returns an Image with those posns represented on the
+; image as dots on the scene.
+; (draw-lop (lop) ...)
+(check-expect (draw-lop empty)
+              (empty-scene width height))
+(check-expect (draw-lop (list (make-posn 250 250) (make-posn 300 100)))
+              (place-image my-dot 250 250
+                           (place-image my-dot 300 100 (empty-scene width height))))
+
+(define (process-draw-lop lop)
+  (... lop ...))
+
+(define (draw-lop lop)
+  (foldr (lambda (p1 pr)
+           (place-image my-dot (posn-x p1) (posn-y p1) pr))
+         (empty-scene width height)
+         lop))
+
+; Apply draw-lop to my-points and store the result in a constant my-plot
+(define my-plot (draw-lop my-points))
+
+
+;;;; Exercise 5
+
+; Design a function cartesian->image
+; cartesian->image: World [ListOf Posn] -> [ListOf Posn]
+; Takes a World (which describes the visible area of the given graph) and a [ListOf Posn]
+; that describes the cartesian points on said graph. Returns a [ListOf Posn] with the y
+; values fitted to match DrRacket so that the high input y values are visually above the
+; low input y values.
+; (define (cartesian->image wor lop) ...)
+(check-expect (cartesian->image (make-world -2 2 -1 1)
+                                (list (make-posn 0 0)
+                                      (make-posn 2 0)
+                                      (make-posn -2 1)))
+              (list (make-posn (/ width 2) (/ height 2))
+                    (make-posn width (/ height 2))
+                    (make-posn 0 0)))
+(check-expect (cartesian->image (make-world -2 6 0 1)
+                                (list (make-posn 0 0)
+                                      (make-posn 2 0)
+                                      (make-posn -2 1)))
+              (list (make-posn (/ width 4) height)
+                    (make-posn (/ width 2) height)
+                    (make-posn 0 0)))
+
+(define (cartesian->image wor lop)
+  (map (lambda (p)
+         (make-posn (convert (world-xmin wor)
+                             0
+                             (world-xmax wor)
+                             width
+                             (posn-x p))
+                    (convert (world-ymin wor)
+                             height
+                             (world-ymax wor)
+                             0
+                             (posn-y p))))
+       lop))
+
+
+;;;; Exercise 6
+
+(define speed 0.2)
+
+; Design a function navigate
+; navigate: World KeyEvent -> World
+; Takes a World and a key event and returns a World. navigate enables 8
+; distinct keyboard-driven behaviors (aside from nothing at all). Will
+; be used as a big-bang key-event handler.
+; (define (navigate w ke) ...)
+(check-expect (navigate (make-world -2 2 -1 1) "down")
+              (make-world -2
+                          2
+                          (- -1 (* speed (- 1 -1)))
+                          (- 1 (* speed (- 1 -1)))))
+(check-expect (navigate (make-world -2 2 -1 1) "up")
+              (make-world -2
+                          2
+                          (+ -1 (* speed (- 1 -1)))
+                          (+ 1 (* speed (- 1 -1)))))
+(check-expect (navigate (make-world -2 2 -1 1) "right")
+              (make-world (+ -2 (* speed (- 2 -2)))
+                          (+ 2 (* speed (- 2 -2)))
+                          -1
+                          1))
+(check-expect (navigate (make-world -2 2 -1 1) "left")
+              (make-world (- -2 (* speed (- 2 -2)))
+                          (- 2 (* speed (- 2 -2)))
+                          -1
+                          1))
+(check-expect (navigate (make-world -2 2 -1 1) "w")
+              (make-world -2
+                          2
+                          (+ -1 (* speed (- 1 -1)))
+                          (- 1 (* speed (- 1 -1)))))
+(check-expect (navigate (make-world -2 2 -1 1) "s")
+              (make-world -2
+                          2
+                          (- -1 (* speed (- 1 -1)))
+                          (+ 1 (* speed (- 1 -1)))))
+(check-expect (navigate (make-world -2 2 -1 1) "d")
+              (make-world (+ -2 (* speed (- 2 -2)))
+                          (- 2 (* speed (- 2 -2)))
+                          -1
+                          1))
+(check-expect (navigate (make-world -2 2 -1 1) "a")
+              (make-world (- -2 (* speed (- 2 -2)))
+                          (+ 2 (* speed (- 2 -2)))
+                          -1
+                          1))
+
+(define (process-navigate w ke)
+  (cond
+    [(string=? ke "down")
+     ...]
+    [(string=? ke "up")
+     ...]
+    [(string=? ke "right")
+     ...]
+    [(string=? ke "left")
+     ...]
+    [(string=? ke "w")
+     ...]
+    [(string=? ke "s")
+     ...]
+    [(string=? ke "d")
+     ...]
+    [(string=? ke "a")
+     ...]))
+
+(define (navigate w ke)
+  (cond
+    [(string=? ke "down")
+     (make-world (world-xmin w)
+                 (world-xmax w)
+                 (- (world-ymin w) (* speed (- (world-ymax w) (world-ymin w))))
+                 (- (world-ymax w) (* speed (- (world-ymax w) (world-ymin w)))))]
+    [(string=? ke "up")
+     (make-world (world-xmin w)
+                 (world-xmax w)
+                 (+ (world-ymin w) (* speed (- (world-ymax w) (world-ymin w))))
+                 (+ (world-ymax w) (* speed (- (world-ymax w) (world-ymin w)))))]
+    [(string=? ke "left")
+     (make-world (- (world-xmin w) (* speed (- (world-xmax w) (world-xmin w))))
+                 (- (world-xmax w) (* speed (- (world-xmax w) (world-xmin w))))
+                 (world-ymin w)
+                 (world-ymax w))]
+    [(string=? ke "right")
+     (make-world (+ (world-xmin w) (* speed (- (world-xmax w) (world-xmin w))))
+                 (+ (world-xmax w) (* speed (- (world-xmax w) (world-xmin w))))
+                 (world-ymin w)
+                 (world-ymax w))]
+    [(string=? ke "w")
+     (make-world (world-xmin w)
+                 (world-xmax w)
+                 (+ (world-ymin w) (* speed (- (world-ymax w) (world-ymin w))))
+                 (- (world-ymax w) (* speed (- (world-ymax w) (world-ymin w)))))]
+    [(string=? ke "s")
+     (make-world (world-xmin w)
+                 (world-xmax w)
+                 (- (world-ymin w) (* speed (- (world-ymax w) (world-ymin w))))
+                 (+ (world-ymax w) (* speed (- (world-ymax w) (world-ymin w)))))]
+    [(string=? ke "d")
+     (make-world (+ (world-xmin w) (* speed (- (world-xmax w) (world-xmin w))))
+                 (- (world-xmax w) (* speed (- (world-xmax w) (world-xmin w))))
+                 (world-ymin w)
+                 (world-ymax w))]
+    [(string=? ke "a")
+     (make-world (- (world-xmin w) (* speed (- (world-xmax w) (world-xmin w))))
+                 (+ (world-xmax w) (* speed (- (world-xmax w) (world-xmin w))))
+                 (world-ymin w)
+                 (world-ymax w))]
+    else w)))
+    
+
+;;;; Exercise 7
+
+; Define a constant my-interactive-plot
+(define my-interactive-plot
+  (big-bang (make-world -50 50 -50 50)
+    [to-draw (lambda (w) (draw-lop (cartesian->image w my-points)))]
+    [on-key navigate]))
+
+
+;;;; Exercise 8
+
+; Design a function xticks
+; xticks: Number Number Number -> [ListOf Number]
+; Takes three numbers xmin, xmax and n and produces an evenly spaced list of
+; n numbers from xmin to xmax. The output list will be interpreted as x-values
+; in the Cartesian coordinate system.
+; (define (xticks xmin xmax n) ...)
+
+(define (process-xticks xmin xmax n)
+  ( ... xmin ... xmax ... n))
+
+(define (xticks xmin xmax n)
+  (build-list n (λ (x) (convert 0 xmin (- n 1) xmax x))))
+
+;(xticks -2 2 (add1 width))
+(check-expect (xticks 0 5 5)
+              (list 0 1.25 2.5 3.75 5))
+ 
+
+;;;; Exercise 9
+
+; graph: [Number->Number] [ListOf Number] -> [ListOf Posn]
+; Takes a function Number -> Number and a list of numbers and produces a list of posns. The output
+; posns contain a number from the input list paired with the value of the input function applied to
+; that number. 
+(define (graph op lon)
+  (map (λ (n) (make-posn n (op n))) lon))
+
+(check-expect (graph sqr (list 0 2))
+              (list (make-posn 0 0) (make-posn 2 4)))
+
+
+;;;; Exercise 10
+
+; draw-graph: World [Number->Number] -> Image
+; Takes a World and a function Number -> Number and produces its plot.
+
+(define (draw-graph w op)
+  (draw-lop
+   (cartesian->image w
+                     (graph op
+                            (xticks (world-xmin w) (world-xmax w) (add1 width))))))
+
+
+;;;; Exercise 11
+
+; Store the result in a constant named interactive-sin
+
+(define interactive-sin
+  (big-bang (make-world 0 25 -5 5)
+    [to-draw (λ (w) (draw-graph w sin))]
+    [on-key navigate]))
